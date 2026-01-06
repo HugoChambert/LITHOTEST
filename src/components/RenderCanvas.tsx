@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { detectEdges } from '../utils/imageProcessing';
 import * as THREE from 'three';
 
 export function RenderCanvas() {
@@ -18,7 +19,8 @@ export function RenderCanvas() {
     slabTransform,
     mask,
     opacity,
-    showBefore
+    showBefore,
+    showEdgeWrap
   } = useAppStore();
 
   useEffect(() => {
@@ -132,6 +134,15 @@ export function RenderCanvas() {
 
       const maskTexture = new THREE.CanvasTexture(maskCanvas);
 
+      const edgeMask = detectEdges(mask.imageData!, 5);
+      const edgeCanvas = document.createElement('canvas');
+      edgeCanvas.width = mask.imageData!.width;
+      edgeCanvas.height = mask.imageData!.height;
+      const edgeCtx = edgeCanvas.getContext('2d')!;
+      edgeCtx.putImageData(edgeMask, 0, 0);
+
+      const edgeTexture = new THREE.CanvasTexture(edgeCanvas);
+
       const aspect = normalizedPhoto.width / normalizedPhoto.height;
       const geometry = new THREE.PlaneGeometry(2 * aspect, 2);
 
@@ -139,7 +150,9 @@ export function RenderCanvas() {
         uniforms: {
           slabTexture: { value: texture },
           maskTexture: { value: maskTexture },
-          opacity: { value: opacity }
+          edgeTexture: { value: edgeTexture },
+          opacity: { value: opacity },
+          showEdgeWrap: { value: showEdgeWrap ? 1.0 : 0.0 }
         },
         vertexShader: `
           varying vec2 vUv;
@@ -151,13 +164,25 @@ export function RenderCanvas() {
         fragmentShader: `
           uniform sampler2D slabTexture;
           uniform sampler2D maskTexture;
+          uniform sampler2D edgeTexture;
           uniform float opacity;
+          uniform float showEdgeWrap;
           varying vec2 vUv;
+
           void main() {
             vec4 mask = texture2D(maskTexture, vUv);
+            vec4 edge = texture2D(edgeTexture, vUv);
             vec4 slab = texture2D(slabTexture, vUv);
+
+            float isEdge = edge.r * showEdgeWrap;
+
+            vec3 finalColor = slab.rgb;
+            if (isEdge > 0.5) {
+              finalColor = slab.rgb * 0.5;
+            }
+
             float alpha = mask.r * opacity;
-            gl_FragColor = vec4(slab.rgb, alpha);
+            gl_FragColor = vec4(finalColor, alpha);
           }
         `,
         transparent: true
@@ -172,11 +197,11 @@ export function RenderCanvas() {
     };
 
     slabImage.src = selectedSlab.image;
-  }, [selectedSlab, slabTransform, mask, opacity, showBefore, normalizedPhoto]);
+  }, [selectedSlab, slabTransform, mask, opacity, showBefore, showEdgeWrap, normalizedPhoto]);
 
   useEffect(() => {
     render();
-  }, [showBefore]);
+  }, [showBefore, showEdgeWrap]);
 
   return (
     <canvas

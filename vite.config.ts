@@ -4,6 +4,16 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
-    exclude: ['@tensorflow/tfjs', '@tensorflow-models/deeplab']
+    include: ['@tensorflow/tfjs', '@tensorflow-models/deeplab'],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis'
+      }
+    }
+  },
+  resolve: {
+    alias: {
+      './runtimeConfig': './runtimeConfig.browser'
+    }
   }
 })

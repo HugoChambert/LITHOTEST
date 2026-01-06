@@ -74,6 +74,48 @@ export function applyBrushToMask(
   return newMask;
 }
 
+export function detectEdges(mask: ImageData, edgeWidth: number = 3): ImageData {
+  const width = mask.width;
+  const height = mask.height;
+  const edgeMask = new ImageData(width, height);
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      const isFilled = mask.data[idx] > 128;
+
+      if (isFilled) {
+        let isEdge = false;
+
+        for (let dy = -edgeWidth; dy <= edgeWidth && !isEdge; dy++) {
+          for (let dx = -edgeWidth; dx <= edgeWidth && !isEdge; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+
+            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+              const nIdx = (ny * width + nx) * 4;
+              if (mask.data[nIdx] <= 128) {
+                isEdge = true;
+              }
+            } else {
+              isEdge = true;
+            }
+          }
+        }
+
+        if (isEdge) {
+          edgeMask.data[idx] = 255;
+          edgeMask.data[idx + 1] = 255;
+          edgeMask.data[idx + 2] = 255;
+          edgeMask.data[idx + 3] = 255;
+        }
+      }
+    }
+  }
+
+  return edgeMask;
+}
+
 export function exportToImage(canvas: HTMLCanvasElement, filename: string = 'lithovision-render.jpg') {
   canvas.toBlob((blob) => {
     if (blob) {

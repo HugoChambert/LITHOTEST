@@ -12,6 +12,8 @@ interface AppState {
   editMode: EditMode;
   brushSize: number;
   isProcessing: boolean;
+  veinDirectionLocked: boolean;
+  showEdgeWrap: boolean;
 
   setOriginalPhoto: (photo: HTMLImageElement | null) => void;
   setNormalizedPhoto: (photo: HTMLImageElement | null) => void;
@@ -23,6 +25,9 @@ interface AppState {
   setEditMode: (mode: EditMode) => void;
   setBrushSize: (size: number) => void;
   setIsProcessing: (processing: boolean) => void;
+  setVeinDirectionLocked: (locked: boolean) => void;
+  setShowEdgeWrap: (show: boolean) => void;
+  resetSlabTransform: () => void;
   resetProject: () => void;
 }
 
@@ -50,6 +55,8 @@ export const useAppStore = create<AppState>((set) => ({
   editMode: 'view',
   brushSize: 30,
   isProcessing: false,
+  veinDirectionLocked: false,
+  showEdgeWrap: true,
 
   setOriginalPhoto: (photo) => set({ originalPhoto: photo }),
   setNormalizedPhoto: (photo) => set({ normalizedPhoto: photo }),
@@ -64,6 +71,10 @@ export const useAppStore = create<AppState>((set) => ({
   setEditMode: (mode) => set({ editMode: mode }),
   setBrushSize: (size) => set({ brushSize: size }),
   setIsProcessing: (processing) => set({ isProcessing: processing }),
+  setVeinDirectionLocked: (locked) => set({ veinDirectionLocked: locked }),
+  setShowEdgeWrap: (show) => set({ showEdgeWrap: show }),
+
+  resetSlabTransform: () => set({ slabTransform: initialSlabTransform }),
 
   resetProject: () => set({
     originalPhoto: null,
@@ -74,6 +85,8 @@ export const useAppStore = create<AppState>((set) => ({
     showBefore: false,
     opacity: 0.85,
     editMode: 'view',
-    isProcessing: false
+    isProcessing: false,
+    veinDirectionLocked: false,
+    showEdgeWrap: true
   })
 }));
